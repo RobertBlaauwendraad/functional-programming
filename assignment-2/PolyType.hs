@@ -14,7 +14,7 @@ f11 x y = get 0
 -- a)
 -- f8 and f11 can be used on arguments of type String
 -- b)
--- f8 is ad-hoc polymorphic
--- f9 is not polymorphic
--- f10 is not polymorphic
--- f11 is parametric polymorphic
+-- f8 is ad-hoc polymorphic, the type is of the form Ord a => a -> a -> a
+-- f9 is not polymorphic, the type is of the form Bool -> Bool -> Bool
+-- f10 is ad-hoc polymorphic, the type is of the form Num a => a -> a -> a
+-- f11 is parametric polymorphic, the type is of the form a -> a -> a
