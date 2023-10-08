@@ -21,4 +21,4 @@ foo n = compose (map (*) [1..n]) 1
 
 --define in terms of *only* `map` and `compose`
 foldr' :: (a -> b -> b) -> b -> [a] -> b
-foldr' f b = compose . map f
+foldr' f z = compose . map f
