@@ -51,28 +51,78 @@ data Person = Person { name :: String, age :: Double, knowsFP :: Bool }
 
 -- Converting Haskell values to Json
 
--- class ToJson ...
--- instance ToJson ()
--- instance ToJson Bool
--- instance ToJson Double
--- instance ToJson String
--- instance .. => ToJson [a]
--- instance .. => ToJson (a,b)
--- instance ToJson Person
--- Optional extra: instance ToJson Int
+class ToJson a where
+  toJson :: a -> Json
 
+instance ToJson () where
+  toJson () = JSNull
+
+instance ToJson Bool where
+    toJson True  = JSTrue
+    toJson False = JSFalse
+
+instance ToJson Double where
+    toJson = JSNumber
+
+instance ToJson String where
+    toJson = JSString
+
+instance ToJson a => ToJson [a] where
+    toJson = JSList . map toJson
+
+instance (ToJson a, ToJson b) => ToJson (a,b) where
+    toJson (a,b) = JSList [toJson a, toJson b]
+
+instance ToJson Person where
+    toJson (Person name age knowsFP) = JSObject [("name", toJson name), ("age", toJson age), ("knowsFP", toJson knowsFP)]
+
+instance ToJson Int where
+    toJson = JSNumber . fromIntegral
 
 -- Converting from Json back to Haskell values
 
--- class FromJson
--- instance FromJson ()
--- instance FromJson Bool
--- instance FromJson Double
--- instance FromJson String
--- instance .. => FromJson (a,b)
--- instance FromJson Person
--- Optional extra: instance .. => FromJson [a]
--- Optional extra: instance FromJson Int
+class FromJson a where
+  fromJson :: Json -> Maybe a
+
+instance FromJson () where
+    fromJson JSNull = Just ()
+    fromJson _      = Nothing
+
+instance FromJson Bool where
+    fromJson JSTrue  = Just True
+    fromJson JSFalse = Just False
+    fromJson _       = Nothing
+
+instance FromJson Double where
+    fromJson (JSNumber x) = Just x
+    fromJson _            = Nothing
+
+instance FromJson String where
+    fromJson (JSString x) = Just x
+    fromJson _            = Nothing
+
+instance FromJson a => FromJson [a] where
+    fromJson (JSList xs) = sequence $ map fromJson xs
+    fromJson _           = Nothing
+
+instance (FromJson a, FromJson b) => FromJson (a,b) where
+    fromJson (JSList [x,y]) = do
+        x' <- fromJson x
+        y' <- fromJson y
+        return (x', y')
+    fromJson _              = Nothing
+
+instance FromJson Person where
+    fromJson (JSObject [("name", name), ("age", age), ("knowsFP", knowsFP)]) = do
+        name' <- fromJson name
+        age' <- fromJson age
+        knowsFP' <- fromJson knowsFP
+        return (Person name' age' knowsFP')
+    fromJson _ = Nothing
+
+instance FromJson Int where
+    fromJson (JSNumber x) = Just $ round x
+    fromJson _            = Nothing
 
 
 -- Test cases
@@ -93,15 +143,12 @@ json2 = JSObject [("name",JSString "Wim-Lex"),("age",JSNumber 56.0),("knowsFP",J
 json3 = JSList [json1, json2]
 json4 = JSList [JSNull, JSList [JSTrue, JSFalse]]
 
-{-
 testToJson :: Bool
-testToJson = toJson person1 == json1 && 
+testToJson = toJson person1 == json1 &&
              toJson person2 == json2 &&
              toJson persons == json3 &&
              toJson tuple1 == json4
--}
 
-{-
 testFromJson :: Bool
 testFromJson = Just person1 == fromJson json1 && 
                Just person2 == fromJson json2 &&
@@ -109,5 +156,4 @@ testFromJson = Just person1 == fromJson json1 &&
                fromJson json1 == (Nothing :: Maybe String) &&
                fromJson json1 == (Nothing :: Maybe Double) &&
                fromJson json1 == (Nothing :: Maybe Bool)
--}
 
